@@ -60,11 +60,10 @@ class SingleHeadAttention(nn.Module):
         Kx = self.K(x)
         Qx = self.Q(x)
         Vx = self.V(x)
-        QK = torch.sum(Kx *Qx, dim=-1)/np.sqrt(self.dk)
+        QK = torch.matmul(Qx, Kx.transpose(-2, -1)) / np.sqrt(self.dk)
         QK = torch.softmax(QK, dim=-1)
-        QK = QK.unsqueeze(-1)
-        QK = QK.expand(-1, -1, self.dv)
-        return QK*Vx
+        return torch.matmul(QK, Vx)
+    
     
 class MultiHeadAttention(nn.Module):
     def __init__(self, num_heads : int, dk:int, dv:int, model_dim:int):
