@@ -1,6 +1,6 @@
-# Architectures from Scratch
+# ScratchML
 
-Welcome to **Architectures from Scratch**, a repository showcasing machine learning architectures implemented entirely from scratch (some only in Numpy). This project is a journey to deepen my understanding of Python, machine learning, and various libraries by implementing popular ML architectures from scratch.
+Welcome to **ScratchML** a repository showcasing machine learning architectures implemented entirely from scratch (some only in Numpy). This project is a journey to deepen my understanding of Python, machine learning, and various libraries by implementing popular ML architectures from scratch.
 
 ## Repository Structure
 
