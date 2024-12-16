@@ -217,9 +217,29 @@ class Transformer(nn.Module):
             n_embedding=vocab_size,
         )
 
-    def forward(self, x):
-        x = self.embedding(x)
-        x_encoder = self.encoder(x)
-        x = self.decoder(x, x_encoder)
+    def forward(self, input, target):
+        input = self.embedding(input)
+        target = self.embedding(target)
+        x_encoder = self.encoder(input)
+        x = self.decoder(target, x_encoder)
         x = self.linear(x)
         return x
+    
+    def generate(self, x, max_gen_length=50):
+        # output = 
+        # x = 
+        for i in range(max_gen_length):
+            proba = torch.softmax((x), dim=-1)
+            max_proba, next_token = torch.max(proba, dim=-1)
+            next_token = next_token[:, -1].unsqueeze(-1)
+            x = torch.cat((x[:, 1:], next_token), dim=1)
+            output = torch.cat((output, next_token), dim=1)
+        return output
+
+    
+
+    def encode(self, x):
+        pass
+
+    def decode(self, x):
+        pass
