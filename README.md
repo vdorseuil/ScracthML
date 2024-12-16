@@ -1,6 +1,6 @@
 # Architectures from Scratch
 
-Welcome to **Architectures from Scratch**, a repository showcasing machine learning architectures implemented entirely from scratch. This project is a journey to deepen my understanding of Python, machine learning, and various libraries by implementing popular ML architectures from scratch.
+Welcome to **Architectures from Scratch**, a repository showcasing machine learning architectures implemented entirely from scratch (some only in Numpy). This project is a journey to deepen my understanding of Python, machine learning, and various libraries by implementing popular ML architectures from scratch.
 
 ## Repository Structure
 
@@ -76,8 +76,8 @@ This project is licensed under the MIT License. See the [LICENSE](./LICENSE) fil
 
 ## Contact
 For questions or suggestions, feel free to reach out:
-- **Email:** your-email@example.com
-- **LinkedIn:** [Your LinkedIn Profile](https://linkedin.com/in/your-profile)
+- **Email:** valentin.dorseuil@gmail.com
+- **LinkedIn:** [Valentin Dorseuil](https://linkedin.com/in/valentin-dorseuil)
 
 ---
 
