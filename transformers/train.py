@@ -15,6 +15,8 @@ num_out = vocab_size
 num_heads = 8
 dv = 64
 dk = 64
+d_ff = 2048
+dropout = 0.1
 num_encoders = 6
 num_decoders = 6
 
@@ -29,9 +31,13 @@ MyTransformer = Transformer(
     num_heads=num_heads,
     dv=dv,
     dk=dk,
+    d_ff=d_ff,
+    dropout=dropout,
     num_encoders=num_encoders,
     num_decoders=num_decoders,
 )
+
+
 
 if __name__ == "__main__":
     out = torch.softmax(MyTransformer(x), dim=-1)

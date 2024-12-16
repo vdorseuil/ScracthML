@@ -68,7 +68,7 @@ class MultiHeadAttention(nn.Module):
     def __init__(self, num_heads: int, dk: int, dv: int, model_dim: int, mask=None):
         super().__init__()
         assert num_heads * dv == model_dim, "num_heads * dv should be equal to the model dim"
-        self.attention_heads = nn.ModuleList([SingleHeadAttention(dk, dv, model_dim, mask) for _ in range(num_heads)])
+        self.attention_heads = nn.ModuleList([SingleHeadAttention(dk=dk, dv=dv, model_dim=model_dim, mask=mask) for _ in range(num_heads)])
         self.WO = nn.Linear(in_features=num_heads * dv, out_features=model_dim)
         self.mask = mask
 
@@ -80,15 +80,16 @@ class MultiHeadAttention(nn.Module):
 
 
 class EncoderBlock(nn.Module):
-    def __init__(self, num_heads, dk, dv, model_dim):
+    def __init__(self, num_heads, dk, dv, d_ff, model_dim, dropout):
         super().__init__()
         self.attention = MultiHeadAttention(num_heads=num_heads, dk=dk, dv=dv, model_dim=model_dim)
         self.layerNorm1 = nn.LayerNorm(normalized_shape=model_dim)
         self.layerNorm2 = nn.LayerNorm(normalized_shape=model_dim)
         self.ff = nn.Sequential(
-            nn.Linear(in_features=model_dim, out_features=2048),
+            nn.Linear(in_features=model_dim, out_features=d_ff),
             nn.ReLU(),
-            nn.Linear(in_features=2048, out_features=model_dim),
+            nn.Dropout(p=dropout),
+            nn.Linear(in_features=d_ff, out_features=model_dim),
         )
 
     def forward(self, x):
@@ -100,9 +101,11 @@ class EncoderBlock(nn.Module):
 
 
 class Encoder(nn.Module):
-    def __init__(self, num_heads, dk, dv, model_dim, num_encoders):
+    def __init__(self, num_heads, dk, dv, d_ff, model_dim, dropout, num_encoders):
         super().__init__()
-        self.encoders_list = [EncoderBlock(num_heads, dk, dv, model_dim) for _ in range(num_encoders)]
+        self.encoders_list = [
+            EncoderBlock(num_heads=num_heads, dk=dk, dv=dv, d_ff=d_ff, model_dim=model_dim, dropout=dropout) for _ in range(num_encoders)
+        ]
         self.encoders = nn.Sequential(*self.encoders_list)
 
     def forward(self, x):
@@ -111,23 +114,20 @@ class Encoder(nn.Module):
 
 
 class DecoderBlock(nn.Module):
-    def __init__(self, num_heads, dk, dv, model_dim, max_length):
+    def __init__(self, num_heads, dk, dv, d_ff, model_dim, dropout, max_length):
         super().__init__()
-        self.mask = torch.zeros(max_length, max_length) + torch.triu(
-            torch.full((max_length, max_length), float("-inf")), diagonal=1
-        )
-        self.masked_attention = MultiHeadAttention(
-            num_heads=num_heads, dk=dk, dv=dv, model_dim=model_dim, mask=self.mask
-        )
+        self.mask = torch.zeros(max_length, max_length) + torch.triu(torch.full((max_length, max_length), float("-inf")), diagonal=1)
+        self.masked_attention = MultiHeadAttention(num_heads=num_heads, dk=dk, dv=dv, model_dim=model_dim, mask=self.mask)
         self.mixed_attention = MultiHeadAttention(num_heads=num_heads, dk=dk, dv=dv, model_dim=model_dim)
         self.layerNorm1 = nn.LayerNorm(normalized_shape=model_dim)
         self.layerNorm2 = nn.LayerNorm(normalized_shape=model_dim)
         self.layerNorm3 = nn.LayerNorm(normalized_shape=model_dim)
 
         self.ff = nn.Sequential(
-            nn.Linear(in_features=model_dim, out_features=2048),
+            nn.Linear(in_features=model_dim, out_features=d_ff),
             nn.ReLU(),
-            nn.Linear(in_features=2048, out_features=model_dim),
+            nn.Dropout(p=dropout),
+            nn.Linear(in_features=d_ff, out_features=model_dim),
         )
 
     def forward(self, x, x_encoder):
@@ -152,9 +152,20 @@ class CustomSequential(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, num_heads, dk, dv, model_dim, max_length, num_decoders):
+    def __init__(self, num_heads, dk, dv, d_ff, model_dim, max_length, dropout, num_decoders):
         super().__init__()
-        decoders_list = [DecoderBlock(num_heads, dk, dv, model_dim, max_length) for _ in range(num_decoders)]
+        decoders_list = [
+            DecoderBlock(
+                num_heads=num_heads,
+                dk=dk,
+                dv=dv,
+                d_ff=d_ff,
+                model_dim=model_dim,
+                dropout=dropout,
+                max_length=max_length,
+            )
+            for _ in range(num_decoders)
+        ]
         self.decoders = CustomSequential(*decoders_list)
 
     def forward(self, x, x_encoder):
@@ -173,6 +184,8 @@ class Transformer(nn.Module):
         num_heads,
         dv,
         dk,
+        d_ff,
+        dropout,
         num_encoders,
         num_decoders,
     ):
@@ -181,14 +194,18 @@ class Transformer(nn.Module):
             num_heads=num_heads,
             dk=dk,
             dv=dv,
+            d_ff=d_ff,
             model_dim=model_dim,
+            dropout=dropout,
             num_encoders=num_encoders,
         )
         self.decoder = Decoder(
             num_heads=num_heads,
             dk=dk,
             dv=dv,
+            d_ff=d_ff,
             model_dim=model_dim,
+            dropout=dropout,
             num_decoders=num_decoders,
             max_length=max_length,
         )
