@@ -34,5 +34,5 @@ MyTransformer = Transformer(
 )
 
 if __name__ == "__main__":
-    out = MyTransformer(x)
+    out = torch.softmax(MyTransformer(x), dim=-1)
     print(out.shape)
