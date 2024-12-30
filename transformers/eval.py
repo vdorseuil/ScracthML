@@ -32,7 +32,7 @@ val_size = int(0.1 * len(dataset))
 test_size = len(dataset) - train_size - val_size
 _, _, test_dataset = torch.utils.data.random_split(
     dataset, [train_size, val_size, test_size]
-)
+) # With the seed we ensure that this is the same splig.
 
 # Create DataLoader for the test set
 test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
@@ -70,38 +70,37 @@ model = Transformer(
 )
 
 # Load the best model
-model.load_state_dict(torch.load("best_transformer_model.pth"))
+model.load_state_dict(torch.load("best_transformer_model.pth", weights_only=True))
 model.eval()
 
-# Model to device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 
 # Criterion for computing test loss
 criterion = nn.CrossEntropyLoss(ignore_index=english_tokenizer.pad_token_id)
 
-# # Evaluate the model on the test set
-# total_test_loss = 0
-# with torch.no_grad():
-#     for batch in test_loader:
-#         encoder_input, decoder_input, label, encoder_mask, decoder_mask = batch
-#         encoder_input, decoder_input, label, encoder_mask, decoder_mask = (
-#             encoder_input.to(device),
-#             decoder_input.to(device),
-#             label.to(device),
-#             encoder_mask.to(device),
-#             decoder_mask.to(device),
-#         )
+# Evaluate the model on the test set
+total_test_loss = 0
+with torch.no_grad():
+    for batch in test_loader:
+        encoder_input, decoder_input, label, encoder_mask, decoder_mask = batch
+        encoder_input, decoder_input, label, encoder_mask, decoder_mask = (
+            encoder_input.to(device),
+            decoder_input.to(device),
+            label.to(device),
+            encoder_mask.to(device),
+            decoder_mask.to(device),
+        )
 
-#         output = model(encoder_input, decoder_input, encoder_mask, decoder_mask)
-#         loss = criterion(output.view(-1, vocab_size_decoder), label.view(-1))
-#         total_test_loss += loss.item()
+        output = model(encoder_input, decoder_input, encoder_mask, decoder_mask)
+        loss = criterion(output.view(-1, vocab_size_decoder), label.view(-1))
+        total_test_loss += loss.item()
 
-# avg_test_loss = total_test_loss / len(test_loader)
-# print(f"Average Test Loss: {avg_test_loss:.4f}")
+avg_test_loss = total_test_loss / len(test_loader)
+print(f"Average Test Loss: {avg_test_loss:.4f}")
 
 # Show some example translations
-num_examples = 5
+num_examples = 10
 for i, batch in enumerate(test_loader):
     if i >= num_examples:
         break
