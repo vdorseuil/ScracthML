@@ -10,10 +10,15 @@ The goal of this repository is not to create state-of-the-art models, but to dem
 
 The repository is organized into subfolders, each representing a different machine learning architecture or category. Below is an overview of the available architectures:
 
-### 1. [Neural Networks](./neural_networks/)
+### 1. [Transformers](./transformers/)
+- Full transformer implemenation in pytorch from scratch.
+- Encoder-decoder structure with attention mechanism, masks, and regularization.
+- Trained on a basic translation task.
+
+<!-- ### 2. [Neural Networks](./neural_networks/)
 - Basic feedforward neural networks just using numpy.
 - Backpropagation algorithm implementation from scratch, with optimizer implementation.
-- Trained and evaluated on MNIST.
+- Trained and evaluated on MNIST. -->
 
 <!-- ### 2. [Convolutional Neural Networks (CNNs)](./cnns/)
 - Basic convolutional layers
@@ -25,10 +30,7 @@ The repository is organized into subfolders, each representing a different machi
 - LSTMs and GRUs
 - Sequence-to-sequence models -->
 
-### 2. [Transformers](./transformers/)
-- Full transformer implemenation in pytorch from scratch.
-- Encoder-decoder structure with attention mechanism.
-- Trained on a basic translation task.
+
 
 More implementations are comming soon !
 <!-- ### 5. [Generative Models](./generative_models/)
