@@ -1,10 +1,14 @@
-import torch
-import numpy as np
+import argparse
 import random
-from torch.utils.data import DataLoader
+
+import numpy as np
+import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader
+
 from model import Transformer
-from train import TranslationDataset, Tokenizer, english_sentences, french_sentences, max_length_english, max_length_french
+from train import (Tokenizer, TranslationDataset, english_sentences,
+                   french_sentences, max_length_english, max_length_french)
 
 # Set the seed for reproducibility
 seed = 42
@@ -26,63 +30,78 @@ dataset = TranslationDataset(
     max_length_english,
 )
 
-# Split the dataset into train, validation, and test sets
-train_size = int(0.8 * len(dataset))
-val_size = int(0.1 * len(dataset))
-test_size = len(dataset) - train_size - val_size
-_, _, test_dataset = torch.utils.data.random_split(
-    dataset, [train_size, val_size, test_size]
-) # With the seed we ensure that this is the same splig.
+def main(args):
+    # Model Parameters
+    d_model = args.d_model
+    max_length_encoder = max_length_english
+    max_length_decoder = max_length_french
+    vocab_size_encoder = len(english_tokenizer.vocab)
+    vocab_size_decoder = len(french_tokenizer.vocab)
+    num_out = vocab_size_decoder
+    num_heads = args.num_heads
+    dv = args.dv
+    dk = args.dk
+    d_ff = args.d_ff
+    dropout = args.dropout
+    num_encoders = args.num_encoders
+    num_decoders = args.num_decoders
 
-# Create DataLoader for the test set
-test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
+    # Initialize model with the same parameters as your checkpoint
+    model = Transformer(
+        d_model=d_model,
+        max_length_encoder=max_length_encoder,
+        max_length_decoder=max_length_decoder,
+        vocab_size_encoder=vocab_size_encoder,
+        vocab_size_decoder=vocab_size_decoder,
+        num_out=num_out,
+        num_heads=num_heads,
+        dv=dv,
+        dk=dk,
+        d_ff=d_ff,
+        dropout=dropout,
+        num_encoders=num_encoders,
+        num_decoders=num_decoders,
+    )
 
-# Model Parameters
-d_model = 128
-max_length_encoder = max_length_english
-max_length_decoder = max_length_french
-vocab_size_encoder = len(english_tokenizer.vocab)
-vocab_size_decoder = len(french_tokenizer.vocab)
-num_out = vocab_size_decoder
-num_heads = 8
-dv = 16
-dk = 16
-d_ff = 512
-dropout = 0.1
-num_encoders = 4
-num_decoders = 4
+    # Load the best model
+    model.load_state_dict(torch.load("best_transformer_model.pth", weights_only=True))
+    model.eval()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    criterion = nn.CrossEntropyLoss(ignore_index=english_tokenizer.pad_token_id)
 
-# Initialize model
-model = Transformer(
-    d_model=d_model,
-    max_length_encoder=max_length_encoder,
-    max_length_decoder=max_length_decoder,
-    vocab_size_encoder=vocab_size_encoder,
-    vocab_size_decoder=vocab_size_decoder,
-    num_out=num_out,
-    num_heads=num_heads,
-    dv=dv,
-    dk=dk,
-    d_ff=d_ff,
-    dropout=dropout,
-    num_encoders=num_encoders,
-    num_decoders=num_decoders,
-)
+    # Dataset split and DataLoader, wth the seed we ensure that this is the same split as in the train.py
+    train_size = int(0.8 * len(dataset))
+    val_size = int(0.1 * len(dataset))
+    test_size = len(dataset) - train_size - val_size
+    _, _, test_dataset = torch.utils.data.random_split(dataset, [train_size, val_size, test_size], generator=torch.Generator().manual_seed(42))
+    test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
 
-# Load the best model
-model.load_state_dict(torch.load("best_transformer_model.pth", weights_only=True))
-model.eval()
+    # Evaluate the model on the test set
+    total_test_loss = 0
+    with torch.no_grad():
+        for batch in test_loader:
+            encoder_input, decoder_input, label, encoder_mask, decoder_mask = batch
+            encoder_input, decoder_input, label, encoder_mask, decoder_mask = (
+                encoder_input.to(device),
+                decoder_input.to(device),
+                label.to(device),
+                encoder_mask.to(device),
+                decoder_mask.to(device),
+            )
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model.to(device)
+            output = model(encoder_input, decoder_input, encoder_mask, decoder_mask)
+            loss = criterion(output.view(-1, vocab_size_decoder), label.view(-1))
+            total_test_loss += loss.item()
 
-# Criterion for computing test loss
-criterion = nn.CrossEntropyLoss(ignore_index=english_tokenizer.pad_token_id)
+    avg_test_loss = total_test_loss / len(test_loader)
+    print(f"Average Test Loss: {avg_test_loss:.4f}")
 
-# Evaluate the model on the test set
-total_test_loss = 0
-with torch.no_grad():
-    for batch in test_loader:
+    # Show some example translations
+    num_examples = 5
+    for i, batch in enumerate(test_loader):
+        if i >= num_examples:
+            break
         encoder_input, decoder_input, label, encoder_mask, decoder_mask = batch
         encoder_input, decoder_input, label, encoder_mask, decoder_mask = (
             encoder_input.to(device),
@@ -91,37 +110,31 @@ with torch.no_grad():
             encoder_mask.to(device),
             decoder_mask.to(device),
         )
+        generated_tokens, _ = model.generate(
+            encoder_input, max_gen_length=max_length_french, padding_mask_encoder=encoder_mask, special_tokens_ids=french_tokenizer.special_tokens_ids
+        )
+            
+        original_sentence = english_tokenizer.decode(encoder_input[0].tolist())
+        translated_sentence = french_tokenizer.decode(generated_tokens)
+        target_sentence = french_tokenizer.decode(label[0].tolist())
 
-        output = model(encoder_input, decoder_input, encoder_mask, decoder_mask)
-        loss = criterion(output.view(-1, vocab_size_decoder), label.view(-1))
-        total_test_loss += loss.item()
+        print(f"Original: {original_sentence}")
+        print(f"Translated: {translated_sentence}")
+        print(f"Target: {target_sentence}")
+        print()
 
-avg_test_loss = total_test_loss / len(test_loader)
-print(f"Average Test Loss: {avg_test_loss:.4f}")
 
-# Show some example translations
-num_examples = 5
-for i, batch in enumerate(test_loader):
-    if i >= num_examples:
-        break
-    encoder_input, decoder_input, label, encoder_mask, decoder_mask = batch
-    encoder_input, decoder_input, label, encoder_mask, decoder_mask = (
-        encoder_input.to(device),
-        decoder_input.to(device),
-        label.to(device),
-        encoder_mask.to(device),
-        decoder_mask.to(device),
-    )
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Evaluate and generate translations from the test dataset using a trained Transformer model.")
+    parser.add_argument("--d_model", type=int, default=128, help="Dimension of the model")
+    parser.add_argument("--num_heads", type=int, default=8, help="Number of attention heads")
+    parser.add_argument("--dv", type=int, default=16, help="Dimension of value vectors")
+    parser.add_argument("--dk", type=int, default=16, help="Dimension of key/query vectors")
+    parser.add_argument("--d_ff", type=int, default=512, help="Dimension of feedforward layer")
+    parser.add_argument("--dropout", type=float, default=0.1, help="Dropout rate")
+    parser.add_argument("--num_encoders", type=int, default=4, help="Number of encoder layers")
+    parser.add_argument("--num_decoders", type=int, default=4, help="Number of decoder layers")
 
-    generated_tokens, _ = model.generate(
-        encoder_input, max_gen_length=max_length_french, start_token=french_tokenizer.sos_token_id, end_token=french_tokenizer.eos_token_id, padding_mask_encoder=encoder_mask
-    )
+    args = parser.parse_args()
 
-    original_sentence = english_tokenizer.decode(encoder_input[0].tolist())
-    translated_sentence = french_tokenizer.decode(generated_tokens)
-    target_sentence = french_tokenizer.decode(label[0].tolist())
-
-    print(f"Original: {original_sentence}")
-    print(f"Translated: {translated_sentence}")
-    print(f"Target: {target_sentence}")
-    print()
+    main(args)

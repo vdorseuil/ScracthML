@@ -538,9 +538,11 @@ class Transformer(nn.Module):
         encoder_mask = padding_mask_encoder.unsqueeze(1).expand(-1, self.max_length_encoder, -1)
 
         decoder_mask = self.ff_mask.to(device) + padding_mask_decoder.unsqueeze(1).expand(-1, self.max_length_decoder, -1)  # Causal mask
-        mixed_mask = padding_mask_decoder.unsqueeze(1).expand(-1, self.max_length_encoder, -1).transpose(-1, -2) + padding_mask_encoder.unsqueeze(1).expand(-1, self.max_length_decoder, -1)
+        mixed_mask = padding_mask_decoder.unsqueeze(1).expand(-1, self.max_length_encoder, -1).transpose(-1, -2) + padding_mask_encoder.unsqueeze(
+            1
+        ).expand(-1, self.max_length_decoder, -1)
         # In reality we don't care about the padded rows of our attention matrix, at the end the loss won't take them into account and we won't update the weights during the backward pass.
-        
+
         input_embed = self.embedding_encoder(input)
         output_embed = self.embedding_decoder(output)
 
@@ -552,26 +554,29 @@ class Transformer(nn.Module):
     def generate(self, input, max_gen_length, padding_mask_encoder, special_tokens_ids):  # greedy decoding
         self.eval()
         input_embed = self.embedding_encoder(input)
-        x_encoder = self.encoder(input_embed, mask=padding_mask_encoder)
 
-        generated_tokens = [special_tokens_ids.bos_token_id]
+        padding_mask_encoder[padding_mask_encoder == 1] = -1e9
+        padding_mask_encoder[padding_mask_encoder == 0] = 0.0
+        x_encoder = self.encoder(input_embed, mask=padding_mask_encoder.to(input.device))
+
+        generated_tokens = [special_tokens_ids["bos_token_id"]]
         generated_tokens_probas = [1]
 
         for _ in range(max_gen_length):
             output = torch.tensor(generated_tokens).unsqueeze(0).to(input.device)
             out_embed = self.embedding_decoder(output)
             causal_mask = self.ff_mask[: out_embed.size(1), : out_embed.size(1)].to(input.device)
-            x = self.decoder(out_embed, x_encoder, causal_mask=causal_mask)
+            x = self.decoder(out_embed, x_encoder, causal_mask=causal_mask, mixed_mask=padding_mask_encoder)
             x = self.linear(x)
             probas = torch.softmax(x, dim=-1)
-            
-            probas[:, :, special_tokens_ids.unk_token_id] = 0 # Mask the probability of the <UNK> token
-            probas[:, :, special_tokens_ids.pad_token_id] = 0 # Mask the probability of the <PAD> token
+
+            probas[:, :, special_tokens_ids["unk_token_id"]] = 0  # Mask the probability of the <UNK> token
+            probas[:, :, special_tokens_ids["pad_token_id"]] = 0  # Mask the probability of the <PAD> token
 
             max_proba, next_token = torch.max(probas[:, -1, :], dim=-1)  # greedy decoding : only max_proba
             generated_tokens.append(next_token.item())
             generated_tokens_probas.append(max_proba.item())
-            if next_token == special_tokens_ids.eos_token_id:
+            if next_token == special_tokens_ids["eos_token_id"]:
                 break
 
         return generated_tokens, generated_tokens_probas

@@ -84,23 +84,17 @@ class Tokenizer:
         self.pad_token_id = self.word_to_idx[self.pad_token]
         self.unk_token_id = self.word_to_idx[self.unk_token]
         self.special_tokens_ids = {
-            "bos_token_id":self.bos_token_id,
-            "bos_token_id":self.eos_token_id,
-            "pad_token_id":self.pad_token_id,
-            "unk_token_id":self.unk_token_id,
+            "bos_token_id": self.bos_token_id,
+            "eos_token_id": self.eos_token_id,
+            "pad_token_id": self.pad_token_id,
+            "unk_token_id": self.unk_token_id,
         }
 
     def encode(self, sentence):
         return [self.word_to_idx.get(word, self.unk_token_id) for word in sentence.split()]
 
     def decode(self, indices):
-        return " ".join(
-            [
-                self.idx_to_word[idx]
-                for idx in indices
-                if idx not in {self.bos_token_id, self.eos_token_id, self.pad_token_id}
-            ]
-        )
+        return " ".join([self.idx_to_word[idx] for idx in indices if idx not in {self.bos_token_id, self.eos_token_id, self.pad_token_id}])
 
 
 # Dataset class
@@ -155,25 +149,16 @@ class TranslationDataset(Dataset):
     def preprocess(self):  #
         data = []
         for eng, fra in zip(self.english_sentences, self.french_sentences):
-            if (
-                len(eng.split()) > self.max_length_english
-                or len(fra.split()) > self.max_length_french - 1
-            ):
+            if len(eng.split()) > self.max_length_english or len(fra.split()) > self.max_length_french - 1:
                 continue  # We remove the sequences that are too long (only 800 and 150 of each -> not a lot)
 
             eng_tokens = eng.split()
-            fra_tokens = (
-                [self.french_tokenizer.bos_token]
-                + fra.split()
-                + [self.french_tokenizer.eos_token]
-            )
+            fra_tokens = [self.french_tokenizer.bos_token] + fra.split() + [self.french_tokenizer.eos_token]
 
             eng_idx = self.english_tokenizer.encode(" ".join(eng_tokens))
             fra_idx = self.french_tokenizer.encode(" ".join(fra_tokens))
 
-            eng_idx += [self.english_tokenizer.pad_token_id] * (
-                self.max_length_english - len(eng_idx)
-            )
+            eng_idx += [self.english_tokenizer.pad_token_id] * (self.max_length_english - len(eng_idx))
             fra_idx += [self.french_tokenizer.pad_token_id] * (
                 self.max_length_french - len(fra_idx) + 1
             )  # +1 because then we will shift outputs to the right
@@ -182,13 +167,9 @@ class TranslationDataset(Dataset):
             decoder_input = torch.tensor(fra_idx[:-1])
             label = torch.tensor(fra_idx[1:])
 
-            encoder_mask = (encoder_input == self.english_tokenizer.pad_token_id).to(
-                torch.float32
-            )
+            encoder_mask = (encoder_input == self.english_tokenizer.pad_token_id).to(torch.float32)
 
-            decoder_mask = (decoder_input == self.french_tokenizer.pad_token_id).to(
-                torch.float32
-            )
+            decoder_mask = (decoder_input == self.french_tokenizer.pad_token_id).to(torch.float32)
 
             data.append(
                 {
@@ -229,6 +210,7 @@ dataset = TranslationDataset(
     max_length_english,
 )
 
+
 def main(args):
     # Model Parameters
     d_model = args.d_model
@@ -254,10 +236,7 @@ def main(args):
     train_size = int(0.8 * len(dataset))
     val_size = int(0.1 * len(dataset))
     test_size = len(dataset) - train_size - val_size
-    train_dataset, val_dataset, test_dataset = random_split(
-        dataset,
-        [train_size, val_size, test_size],
-    )
+    train_dataset, val_dataset, test_dataset = random_split(dataset,[train_size, val_size, test_size], torch.Generator().manual_seed(42))
 
     # Create DataLoaders for each split
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
@@ -323,9 +302,7 @@ def main(args):
                 total_train_loss += loss.item()
 
                 if batch_idx % 20 == 0:
-                    print(
-                        f"Epoch [{epoch + 1}/{num_epochs}], Batch [{batch_idx + 1}/{len(train_loader)}], Loss: {loss.item():.4f}"
-                    )
+                    print(f"Epoch [{epoch + 1}/{num_epochs}], Batch [{batch_idx + 1}/{len(train_loader)}], Loss: {loss.item():.4f}")
 
             avg_train_loss = total_train_loss / len(train_loader)
             train_losses.append(avg_train_loss)
@@ -350,28 +327,20 @@ def main(args):
             avg_val_loss = total_val_loss / len(val_loader)
             val_losses.append(avg_val_loss)
 
-            print(
-                f"Epoch [{epoch + 1}/{num_epochs}], Average Training Loss: {avg_train_loss:.4f}, Average Validation Loss: {avg_val_loss:.4f}"
-            )
+            print(f"Epoch [{epoch + 1}/{num_epochs}], Average Training Loss: {avg_train_loss:.4f}, Average Validation Loss: {avg_val_loss:.4f}")
 
-            if avg_val_loss < best_val_loss:
+            if avg_val_loss < best_val_loss: #monitor on best loss
                 best_val_loss = avg_val_loss
                 torch.save(model.state_dict(), "best_transformer_model.pth")
                 print(f"Model saved with validation loss: {best_val_loss:.4f}")
 
         return train_losses, val_losses
 
-    print(
-        "Training of a Transformer Model on the English-French Dataset with the following hyperparameters:"
-    )
-    print(
-        f"Model Parameters: d_model={d_model}, d_ff={d_ff}, num_encoders={num_encoders}, num_decoders={num_decoders}"
-    )    
+    print("Training of a Transformer Model on the English-French Dataset with the following hyperparameters:")
+    print(f"Model Parameters: d_model={d_model}, d_ff={d_ff}, num_encoders={num_encoders}, num_decoders={num_decoders}")
     print(f"num_heads={num_heads}, dv={dv}, dk={dk}, dropout={dropout}")
 
-    print(
-        f"Training Parameters: batch_size={batch_size}, learning_rate={learning_rate}, num_epochs={num_epochs}"
-    )
+    print(f"Training Parameters: batch_size={batch_size}, learning_rate={learning_rate}, num_epochs={num_epochs}")
 
     num_params = sum(p.numel() for p in model.parameters())
     print(f"Number of parameters in the Transformer model: {num_params}")

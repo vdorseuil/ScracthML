@@ -47,12 +47,21 @@ Feel free to explore the code to understand the implementation and adapt it to y
 To evaluate the model on the test set and generate example translations, run the [`eval.py`](eval.py) script:
 
    ```bash
-   python eval.py
+   python eval.py 
    ```
+Or if you didn't use default hyperparameters : 
+
+   ```bash
+   python eval.py --d_model 256 --num_heads 8 --dv 32 --dk 32 --d_ff 1024 --dropout 0.2 --num_encoders 6 --num_decoders 6
+   ```
+
 The [`eval.py`](eval.py) script will:
 
 - Compute the average test loss.
 - Generate and print example translations from the test set.
+
+**Note:** Ensure that you pass the same hyperparameters as arguments to `eval.py` that you used in train.py to correctly load the model.
+
 
 ## Interactive Translation
 To interactively translate English sentences to French using the trained Transformer model, run the [`generate.py`](generate.py) script:
@@ -65,40 +74,53 @@ The [`generate.py`](generate.py) script will:
 - Prompt you to enter English sentences.
 - Output the translated French sentences.
 
+**Note:** Same note for the generate.py script, ensure that you pass the same hyperparameters as aruments to `generate.py` that you used in `train.py`.
+
 
 ## Results
-### Results for a 19M Parameter Model
+### Results for a 42M Parameter Model
 
-The model was trained with the default hyperparameters for 10 epochs, resulting in a total of 19 million parameters. Below are the key results and observations:
+To test our scripts, we trained a model with the following hyperparameters for 50 epochs, resulting in a total of 42 million parameters.
+- Model Parameters: d_model=256, d_ff=512, num_encoders=6, num_decoders=6
+num_heads=8, dv=32, dk=32, dropout=0.1
+- Training Parameters: batch_size=256, learning_rate=0.001, num_epochs=50
 
-- **Average Test Loss**: 1.637
-- **Example Translations**:
-   - **Original**: Let's all remember to be nice.
-      - **Translated**: Les bactéries vivent aux oignons de suspect.
-      - **Target**: Souvenons-nous tous d'être gentils.
-   - **Original**: Why would I be jealous?
-      - **Translated**: Pourquoi les bactéries crient.
-      - **Target**: Pourquoi serais-je jaloux ?
-   - **Original**: I felt like I was dead.
-      - **Translated**: Je me suis senti comme les pauvres s'appauvrissent.
-      - **Target**: J'avais l'impression d'être mort.
-   - **Original**: The ice has melted.
-      - **Translated**: Les scarabées, vivent suspect.
-      - **Target**: La glace a fondu.
-   - **Original**: You've got to read this.
-      - **Translated**: Tu as des femmes supplémentaires qui ne va pas suspect.
-      - **Target**: Il faut que tu lises ça.
+
+Below are the key results and observations.
+
+- **Average Test Loss**: 1.5633
+- **Example from the test dataset:**
+   - Original: Let's all remember to be nice.
+      - Translated: Rappelons toute bonne d'être gentille.
+      - Target: Souvenons-nous tous d'être gentils.
+
+   - Original: Why would I be jealous?
+      - Translated: Pourquoi serais-je jalouse ?
+      - Target: Pourquoi serais-je jaloux ?
+
+   - Original: I felt like I was dead.
+      - Translated: J'avais l'impression d'être mort.
+      - Target: J'avais l'impression d'être mort.
+
+   - Original: The ice has melted.
+      - Translated: La glace a fondu.
+      - Target: La glace a fondu.
+ 
+   - Original: You've got to read this.
+      - Translated: Tu dois lire ça.
+      - Target: Il faut que tu lises ça.
 
 ### Comments on Model Performance
 
-- The model was trained for only 10 epochs with a relatively small architecture due to computational limitations.
+- The model was trained for 50 epochs with a relatively small architecture due to computational limitations. It achieved best perfomance after epoch 17.
 - The goal was not to achieve state-of-the-art (SOTA) performance but to understand the Transformer model's workings.
-- Despite the limitations, the model has learned some aspects of translation, often getting the beginning of the sentence correct and sometimes the structure of the sentence.
+- Despite the limitations, the model has learned some aspects of translation, often getting simple sentences correct.
 - We used a very basic tokenizer; implementing a BPE would definitely help.
-- There are still many errors, especially with longer and more complex sentences, indicating room for improvement with more training and a larger model.
+- There are still errors, especially with longer and more complex sentences, indicating room for improvement with more training and a larger model.
+- By playing with the model using `generate.py` to try different type sentences, we saw some limitations. Due to the basic implementation of the tokenizer, the model was unfortunately very sensitive to the punctuation, the spaces and the case. But for simple sentences (like the ones in the dataset), the model seems pretty good.
 ### Loss Plot during Training
 
-Below is the plot of the training and validation losses for 10 epoch for this model.
+Below is the plot of the training and validation losses for 50 epoch for this model. We monitored the best checkpoint on the validation loss to avoid overfitting. The best model obtained a val_loss of 1.5638 on epoch 17.
 
 ![Loss Plot](loss_plot.png)
 
