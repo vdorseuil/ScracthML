@@ -549,12 +549,12 @@ class Transformer(nn.Module):
         x = self.linear(x)
         return x
 
-    def generate(self, input, max_gen_length, start_token, end_token, padding_mask_encoder):  # greedy decoding
+    def generate(self, input, max_gen_length, padding_mask_encoder, special_tokens_ids):  # greedy decoding
         self.eval()
         input_embed = self.embedding_encoder(input)
         x_encoder = self.encoder(input_embed, mask=padding_mask_encoder)
 
-        generated_tokens = [start_token]
+        generated_tokens = [special_tokens_ids.bos_token_id]
         generated_tokens_probas = [1]
 
         for _ in range(max_gen_length):
@@ -564,10 +564,14 @@ class Transformer(nn.Module):
             x = self.decoder(out_embed, x_encoder, causal_mask=causal_mask)
             x = self.linear(x)
             probas = torch.softmax(x, dim=-1)
+            
+            probas[:, :, special_tokens_ids.unk_token_id] = 0 # Mask the probability of the <UNK> token
+            probas[:, :, special_tokens_ids.pad_token_id] = 0 # Mask the probability of the <UNK> token
+
             max_proba, next_token = torch.max(probas[:, -1, :], dim=-1)  # greedy decoding : only max_proba
             generated_tokens.append(next_token.item())
             generated_tokens_probas.append(max_proba.item())
-            if next_token == end_token:
+            if next_token == special_tokens_ids.eos_token_id:
                 break
 
         return generated_tokens, generated_tokens_probas
