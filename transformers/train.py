@@ -1,18 +1,27 @@
+import random
+import zipfile
+
 import matplotlib.pyplot as plt
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset, random_split
 
-
-import zipfile
-
 from model import Transformer
+
+# Set the seed for reproducibility
+seed = 42
+torch.manual_seed(seed)
+np.random.seed(seed)
+random.seed(seed)
+if torch.cuda.is_available():
+    torch.cuda.manual_seed_all(seed)
 
 # Read the file and Prepare the dataset
 
 filename = "fra-eng.zip"
-with zipfile.ZipFile(filename, 'r') as zip_ref:
+with zipfile.ZipFile(filename, "r") as zip_ref:
     zip_ref.extractall(".")
 
 with open("fra.txt", "r", encoding="utf-8") as file:
@@ -236,7 +245,8 @@ train_size = int(0.8 * len(dataset))
 val_size = int(0.1 * len(dataset))
 test_size = len(dataset) - train_size - val_size
 train_dataset, val_dataset, test_dataset = random_split(
-    dataset, [train_size, val_size, test_size]
+    dataset,
+    [train_size, val_size, test_size],
 )
 
 # Create DataLoaders for each split
