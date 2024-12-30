@@ -1,3 +1,6 @@
 __pycache__*
 Project_architecture.txt
 *.ipynb
+transformers/fra-eng.zip
+transformers/fra.txt
+transformers/test.ipynb
