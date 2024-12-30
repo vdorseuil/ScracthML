@@ -197,7 +197,7 @@ class TranslationDataset(Dataset):
         )
 
 
-# Create tokenizers and Datsetfor English and Frenc
+# Create tokenizers and Datset for English and French
 max_length_english = 20  # We choose thes values specifically for this dataset.
 max_length_french = 25
 english_tokenizer = Tokenizer(english_sentences)
