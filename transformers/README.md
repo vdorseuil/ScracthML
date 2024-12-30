@@ -18,9 +18,31 @@ This folder contains an implementation of the Transformer architecture based on 
 ## How to Use
 
 1. Ensure you have the required dependencies installed (e.g., PyTorch, NumPy).
+2. Download the `fra-eng.zip` file from [ManyThings.org](http://www.manythings.org/anki/)
 2. Run `train.py` to train the model:
    ```bash
    python train.py
    ```
 
 Feel free to explore the code to understand the implementation and adapt it to your needs!
+
+## Features Implemented
+- Multi Head Attention
+- Handles different max_length for encoder and decoder
+- Regularization (Dropout and normalization)
+- Causal mask and Padding Mask
+- Generate function
+- Full custom dataset for traning
+
+## Data Source
+This project uses data from the [Tatoeba Project](http://tatoeba.org) and [ManyThings.org](http://www.manythings.org/anki/).
+
+### Attribution
+The dataset used to train the model copmes from the `fra-eng.zip` file.
+
+This data is provided under the [Creative Commons Attribution 2.0 License](http://creativecommons.org/licenses/by/2.0).
+
+### Terms of Use
+Please see the terms of use for the dataset:
+- [Tatoeba Terms of Use](http://tatoeba.org/eng/terms_of_use)
+- [Creative Commons Attribution 2.0 License](http://creativecommons.org/licenses/by/2.0)
