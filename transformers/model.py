@@ -558,9 +558,9 @@ class Transformer(nn.Module):
         generated_tokens_probas = [1]
 
         for _ in range(max_gen_length):
-            output = torch.tensor(generated_tokens).unsqueeze(0)
+            output = torch.tensor(generated_tokens).unsqueeze(0).to(input.device)
             out_embed = self.embedding_decoder(output)
-            causal_mask = self.ff_mask[: out_embed.size(1), : out_embed.size(1)]
+            causal_mask = self.ff_mask[: out_embed.size(1), : out_embed.size(1)].to(input.device)
             x = self.decoder(out_embed, x_encoder, causal_mask=causal_mask)
             x = self.linear(x)
             probas = torch.softmax(x, dim=-1)
