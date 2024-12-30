@@ -6,10 +6,10 @@ This folder contains an implementation of the Transformer architecture based on 
 
 ## Files
 
-- **`model.py`**: Contains the implementation of the Transformer model, including the encoder, decoder, and self-attention mechanisms.
-- **`train.py`**: Script to train the Transformer model on a dataset, including data loading, training loop, and checkpoint saving.
-- **`eval.py`**: Script to evaluate the Transformer model on the test set, including generating example translations and computing the test loss.
-- **`generate.py`**: Script to interactively translate English sentences to French using the trained Transformer model.
+- **[`model.py`](model.py)**: Contains the implementation of the Transformer model, including the encoder, decoder, and self-attention mechanisms.
+- **[`train.py`](train.py)**: Script to train the Transformer model on a dataset, including data loading, training loop, and checkpoint saving.
+- **[`eval.py`](eval.py)**: Script to evaluate the Transformer model on the test set, including generating example translations and computing the test loss.
+- **[`generate.py`](/transformers/generate.py)**: Script to interactively translate English sentences to French using the trained Transformer model.
 
 ## Highlights
 
@@ -30,7 +30,7 @@ This folder contains an implementation of the Transformer architecture based on 
 
 1. Ensure you have the required dependencies installed (e.g., PyTorch, NumPy).
 2. Download the `fra-eng.zip` file from [ManyThings.org](http://www.manythings.org/anki/)
-3. Run `train.py` to train the model:
+3. Run [`train.py`](train.py) to train the model:
 
    ```bash
    python train.py
@@ -44,22 +44,22 @@ Feel free to explore the code to understand the implementation and adapt it to y
 
 
 ## Evaluation
-To evaluate the model on the test set and generate example translations, run the `eval.py` script:
+To evaluate the model on the test set and generate example translations, run the [`eval.py`](eval.py) script:
 
    ```bash
    python eval.py
    ```
-The `eval.py` script will:
+The [`eval.py`](eval.py) script will:
 
 - Compute the average test loss.
 - Generate and print example translations from the test set.
 
 ## Interactive Translation
-To interactively translate English sentences to French using the trained Transformer model, run the `generate.py` script:
+To interactively translate English sentences to French using the trained Transformer model, run the [`generate.py`](generate.py) script:
    ```bash
    python generate.py
    ```
-The `generate.py` script will:
+The [`generate.py`](generate.py) script will:
 
 - Load the trained Transformer model.
 - Prompt you to enter English sentences.
