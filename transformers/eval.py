@@ -100,7 +100,7 @@ avg_test_loss = total_test_loss / len(test_loader)
 print(f"Average Test Loss: {avg_test_loss:.4f}")
 
 # Show some example translations
-num_examples = 10
+num_examples = 5
 for i, batch in enumerate(test_loader):
     if i >= num_examples:
         break
