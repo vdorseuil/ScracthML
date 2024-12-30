@@ -9,7 +9,7 @@ This folder contains an implementation of the Transformer architecture based on 
 - **`model.py`**: Contains the implementation of the Transformer model, including the encoder, decoder, and self-attention mechanisms.
 - **`train.py`**: Script to train the Transformer model on a dataset, including data loading, training loop, and checkpoint saving.
 - **`eval.py`**: Script to evaluate the Transformer model on the test set, including generating example translations and computing the test loss.
-
+- **`generate.py`**: Script to interactively translate English sentences to French using the trained Transformer model.
 
 ## Highlights
 
@@ -23,7 +23,7 @@ This folder contains an implementation of the Transformer architecture based on 
 - Regularization (Dropout and normalization)
 - Forward and generate function for the model
 - Causal mask, Padding Mask
-- Tokenizer from scratch with EOS, BOS, UNK and PAD tokens
+- Tokenizer from scratch with BOS, EOS, UNK and PAD tokens
 - Dataset preprocessing for training
 
 ## How to Use : Training
@@ -53,6 +53,18 @@ The `eval.py` script will:
 
 - Compute the average test loss.
 - Generate and print example translations from the test set.
+
+## Interactive Translation
+To interactively translate English sentences to French using the trained Transformer model, run the `generate.py` script:
+   ```bash
+   python generate.py
+   ```
+The `generate.py` script will:
+
+- Load the trained Transformer model.
+- Prompt you to enter English sentences.
+- Output the translated French sentences.
+
 
 ## Results
 ### Results for a 19M Parameter Model
