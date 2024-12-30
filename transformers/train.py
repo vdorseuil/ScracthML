@@ -1,3 +1,4 @@
+import argparse
 import random
 import zipfile
 
@@ -47,7 +48,7 @@ class Tokenizer:
         vocab (list): List of vocabulary words including special tokens.
         word_to_idx (dict): Dictionary mapping words to their corresponding indices.
         idx_to_word (dict): Dictionary mapping indices to their corresponding words.
-        sos_token_id (int): Index of the beginning of sentence token.
+        bos_token_id (int): Index of the beginning of sentence token.
         eos_token_id (int): Index of the end of sentence token.
         pad_token_id (int): Index of the padding token.
 
@@ -66,7 +67,8 @@ class Tokenizer:
         self.bos_token = "<BOS>"
         self.eos_token = "<EOS>"
         self.pad_token = "<PAD>"
-        self.special_tokens = [self.bos_token, self.eos_token, self.pad_token]
+        self.unk_token = "<UNK>"
+        self.special_tokens = [self.bos_token, self.eos_token, self.pad_token, self.unk_token]
         self.build_vocab(sentences)
 
     def build_vocab(self, sentences):
@@ -77,19 +79,26 @@ class Tokenizer:
         self.vocab = self.special_tokens + self.vocab
         self.word_to_idx = {word: idx for idx, word in enumerate(self.vocab)}
         self.idx_to_word = {idx: word for idx, word in enumerate(self.vocab)}
-        self.sos_token_id = self.word_to_idx[self.bos_token]
+        self.bos_token_id = self.word_to_idx[self.bos_token]
         self.eos_token_id = self.word_to_idx[self.eos_token]
         self.pad_token_id = self.word_to_idx[self.pad_token]
+        self.unk_token_id = self.word_to_idx[self.unk_token]
+        self.special_tokens_ids = {
+            "bos_token_id":self.bos_token_id,
+            "bos_token_id":self.eos_token_id,
+            "pad_token_id":self.pad_token_id,
+            "unk_token_id":self.unk_token_id,
+        }
 
     def encode(self, sentence):
-        return [self.word_to_idx[word] for word in sentence.split()]
+        return [self.word_to_idx.get(word, self.unk_token_id) for word in sentence.split()]
 
     def decode(self, indices):
         return " ".join(
             [
                 self.idx_to_word[idx]
                 for idx in indices
-                if idx not in {self.sos_token_id, self.eos_token_id, self.pad_token_id}
+                if idx not in {self.bos_token_id, self.eos_token_id, self.pad_token_id}
             ]
         )
 
@@ -206,7 +215,7 @@ class TranslationDataset(Dataset):
         )
 
 
-# Create tokenizers and Datset for English and French
+# Create tokenizers and Dataset for English and French
 max_length_english = 20  # We choose these values specifically for this dataset.
 max_length_french = 25
 english_tokenizer = Tokenizer(english_sentences)
@@ -220,111 +229,82 @@ dataset = TranslationDataset(
     max_length_english,
 )
 
-# Model Parameters
-d_model = 128
-max_length_encoder = max_length_english
-max_length_decoder = max_length_french
-vocab_size_encoder = len(english_tokenizer.vocab)
-vocab_size_decoder = len(french_tokenizer.vocab)
-num_out = vocab_size_decoder
-num_heads = 8
-dv = 16
-dk = 16
-d_ff = 512
-dropout = 0.1
-num_encoders = 4
-num_decoders = 4
+def main(args):
+    # Model Parameters
+    d_model = args.d_model
+    max_length_encoder = max_length_english
+    max_length_decoder = max_length_french
+    vocab_size_encoder = len(english_tokenizer.vocab)
+    vocab_size_decoder = len(french_tokenizer.vocab)
+    num_out = vocab_size_decoder
+    num_heads = args.num_heads
+    dv = args.dv
+    dk = args.dk
+    d_ff = args.d_ff
+    dropout = args.dropout
+    num_encoders = args.num_encoders
+    num_decoders = args.num_decoders
 
-# Training Parameters
-batch_size = 64
-learning_rate = 0.001
-num_epochs = 10
+    # Training Parameters
+    batch_size = args.batch_size
+    learning_rate = args.learning_rate
+    num_epochs = args.num_epochs
 
-# Split the dataset into train, validation, and test sets
-train_size = int(0.8 * len(dataset))
-val_size = int(0.1 * len(dataset))
-test_size = len(dataset) - train_size - val_size
-train_dataset, val_dataset, test_dataset = random_split(
-    dataset,
-    [train_size, val_size, test_size],
-)
+    # Split the dataset into train, validation, and test sets
+    train_size = int(0.8 * len(dataset))
+    val_size = int(0.1 * len(dataset))
+    test_size = len(dataset) - train_size - val_size
+    train_dataset, val_dataset, test_dataset = random_split(
+        dataset,
+        [train_size, val_size, test_size],
+    )
 
-# Create DataLoaders for each split
-train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+    # Create DataLoaders for each split
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
-# Initialize model, criterion and optimizer
-model = Transformer(
-    d_model=d_model,
-    max_length_encoder=max_length_encoder,
-    max_length_decoder=max_length_decoder,
-    vocab_size_encoder=vocab_size_encoder,
-    vocab_size_decoder=vocab_size_decoder,
-    num_out=num_out,
-    num_heads=num_heads,
-    dv=dv,
-    dk=dk,
-    d_ff=d_ff,
-    dropout=dropout,
-    num_encoders=num_encoders,
-    num_decoders=num_decoders,
-)
+    # Initialize model, criterion and optimizer
+    model = Transformer(
+        d_model=d_model,
+        max_length_encoder=max_length_encoder,
+        max_length_decoder=max_length_decoder,
+        vocab_size_encoder=vocab_size_encoder,
+        vocab_size_decoder=vocab_size_decoder,
+        num_out=num_out,
+        num_heads=num_heads,
+        dv=dv,
+        dk=dk,
+        d_ff=d_ff,
+        dropout=dropout,
+        num_encoders=num_encoders,
+        num_decoders=num_decoders,
+    )
 
-criterion = nn.CrossEntropyLoss(ignore_index=english_tokenizer.pad_token_id)
-optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    criterion = nn.CrossEntropyLoss(ignore_index=english_tokenizer.pad_token_id)
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
-# Model to device
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model.to(device)
+    # Model to device
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
 
+    def train(num_epochs):
+        """Train our transformer model for a certain number of epochs.
 
-def train(num_epochs):
-    """Train our transformer model for a certain number of epochs.
+        Args:
+            num_epochs (int): Number of epochs
 
-    Args:
-        num_epochs (int): Number of epochs
+        Returns:
+            train losses and validation losses.
+        """
+        best_val_loss = float("inf")
+        train_losses = []
+        val_losses = []
 
-    Returns:
-        train losses and validation losses.
-    """
-    best_val_loss = float("inf")
-    train_losses = []
-    val_losses = []
-
-    for epoch in range(num_epochs):
-        model.train()
-        total_train_loss = 0
-        for batch_idx, batch in enumerate(train_loader):
-            encoder_input, decoder_input, label, encoder_mask, decoder_mask = batch
-            encoder_input, decoder_input, label, encoder_mask, decoder_mask = (
-                encoder_input.to(device),
-                decoder_input.to(device),
-                label.to(device),
-                encoder_mask.to(device),
-                decoder_mask.to(device),
-            )
-
-            optimizer.zero_grad()
-            output = model(encoder_input, decoder_input, encoder_mask, decoder_mask)
-            loss = criterion(output.view(-1, vocab_size_decoder), label.view(-1))
-            loss.backward()
-            optimizer.step()
-
-            total_train_loss += loss.item()
-
-            if batch_idx % 100 == 0:
-                print(
-                    f"Epoch [{epoch + 1}/{num_epochs}], Batch [{batch_idx + 1}/{len(train_loader)}], Loss: {loss.item():.4f}"
-                )
-
-        avg_train_loss = total_train_loss / len(train_loader)
-        train_losses.append(avg_train_loss)
-
-        model.eval()
-        total_val_loss = 0
-        with torch.no_grad():
-            for batch in val_loader:
+        for epoch in range(num_epochs):
+            model.train()
+            total_train_loss = 0
+            for batch_idx, batch in enumerate(train_loader):
                 encoder_input, decoder_input, label, encoder_mask, decoder_mask = batch
                 encoder_input, decoder_input, label, encoder_mask, decoder_mask = (
                     encoder_input.to(device),
@@ -334,32 +314,61 @@ def train(num_epochs):
                     decoder_mask.to(device),
                 )
 
+                optimizer.zero_grad()
                 output = model(encoder_input, decoder_input, encoder_mask, decoder_mask)
                 loss = criterion(output.view(-1, vocab_size_decoder), label.view(-1))
-                total_val_loss += loss.item()
+                loss.backward()
+                optimizer.step()
 
-        avg_val_loss = total_val_loss / len(val_loader)
-        val_losses.append(avg_val_loss)
+                total_train_loss += loss.item()
 
-        print(
-            f"Epoch [{epoch + 1}/{num_epochs}], Average Training Loss: {avg_train_loss:.4f}, Average Validation Loss: {avg_val_loss:.4f}"
-        )
+                if batch_idx % 20 == 0:
+                    print(
+                        f"Epoch [{epoch + 1}/{num_epochs}], Batch [{batch_idx + 1}/{len(train_loader)}], Loss: {loss.item():.4f}"
+                    )
 
-        if avg_val_loss < best_val_loss:
-            best_val_loss = avg_val_loss
-            torch.save(model.state_dict(), "best_transformer_model.pth")
-            print(f"Model saved with validation loss: {best_val_loss:.4f}")
+            avg_train_loss = total_train_loss / len(train_loader)
+            train_losses.append(avg_train_loss)
 
-    return train_losses, val_losses
+            model.eval()
+            total_val_loss = 0
+            with torch.no_grad():
+                for batch in val_loader:
+                    encoder_input, decoder_input, label, encoder_mask, decoder_mask = batch
+                    encoder_input, decoder_input, label, encoder_mask, decoder_mask = (
+                        encoder_input.to(device),
+                        decoder_input.to(device),
+                        label.to(device),
+                        encoder_mask.to(device),
+                        decoder_mask.to(device),
+                    )
 
+                    output = model(encoder_input, decoder_input, encoder_mask, decoder_mask)
+                    loss = criterion(output.view(-1, vocab_size_decoder), label.view(-1))
+                    total_val_loss += loss.item()
 
-if __name__ == "__main__":
+            avg_val_loss = total_val_loss / len(val_loader)
+            val_losses.append(avg_val_loss)
+
+            print(
+                f"Epoch [{epoch + 1}/{num_epochs}], Average Training Loss: {avg_train_loss:.4f}, Average Validation Loss: {avg_val_loss:.4f}"
+            )
+
+            if avg_val_loss < best_val_loss:
+                best_val_loss = avg_val_loss
+                torch.save(model.state_dict(), "best_transformer_model.pth")
+                print(f"Model saved with validation loss: {best_val_loss:.4f}")
+
+        return train_losses, val_losses
+
     print(
         "Training of a Transformer Model on the English-French Dataset with the following hyperparameters:"
     )
     print(
-        f"Model Parameters: d_model={d_model}, num_heads={num_heads}, d_ff={d_ff}, num_encoders={num_encoders}, num_decoders={num_decoders}"
-    )
+        f"Model Parameters: d_model={d_model}, d_ff={d_ff}, num_encoders={num_encoders}, num_decoders={num_decoders}"
+    )    
+    print(f"num_heads={num_heads}, dv={dv}, dk={dk}, dropout={dropout}")
+
     print(
         f"Training Parameters: batch_size={batch_size}, learning_rate={learning_rate}, num_epochs={num_epochs}"
     )
@@ -382,3 +391,21 @@ if __name__ == "__main__":
     # Save the plot
     plt.savefig("loss_plot.png")
     plt.show()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Train a Transformer model.")
+    parser.add_argument("--d_model", type=int, default=128, help="Dimension of the model")
+    parser.add_argument("--num_heads", type=int, default=8, help="Number of attention heads")
+    parser.add_argument("--dv", type=int, default=16, help="Dimension of value vectors")
+    parser.add_argument("--dk", type=int, default=16, help="Dimension of key/query vectors")
+    parser.add_argument("--d_ff", type=int, default=512, help="Dimension of feedforward layer")
+    parser.add_argument("--dropout", type=float, default=0.1, help="Dropout rate")
+    parser.add_argument("--num_encoders", type=int, default=4, help="Number of encoder layers")
+    parser.add_argument("--num_decoders", type=int, default=4, help="Number of decoder layers")
+    parser.add_argument("--batch_size", type=int, default=64, help="Batch size")
+    parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate")
+    parser.add_argument("--num_epochs", type=int, default=10, help="Number of epochs")
+
+    args = parser.parse_args()
+    main(args)
