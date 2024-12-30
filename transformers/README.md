@@ -21,9 +21,10 @@ This folder contains an implementation of the Transformer architecture based on 
 - Multi Head Attention
 - Handles different max_length for encoder and decoder
 - Regularization (Dropout and normalization)
-- Causal mask and Padding Mask
-- Generate function
-- Full custom dataset for traning
+- Forward and generate function for the model
+- Causal mask, Padding Mask
+- Tokenizer from scratch with EOS, BOS, UNK and PAD tokens
+- Dataset preprocessing for training
 
 ## How to Use : Training
 
@@ -34,66 +35,67 @@ This folder contains an implementation of the Transformer architecture based on 
    ```bash
    python train.py
    ```
+4. To customize hyperparameters, you can specify them as command-line arguments:
+   ```bash 
+   python train.py --d_model 256 --num_heads 8 --dv 32 --dk 32 --d_ff 1024 --dropout 0.2 --num_encoders 6 --num_decoders 6 --batch_size 32 --learning_rate 0.0005 --num_epochs 20
+   ```
 
 Feel free to explore the code to understand the implementation and adapt it to your needs!
 
 
 ## Evaluation
 To evaluate the model on the test set and generate example translations, run the `eval.py` script:
+
    ```bash
    python eval.py
    ```
-The eval.py script will:
+The `eval.py` script will:
 
 - Compute the average test loss.
 - Generate and print example translations from the test set.
 
 ## Results
-### Loss Plot during Training
+### Results for a 19M Parameter Model
 
-Below is the plot of the training and validation losses for 10 epochs, for a model with 19M parameters.
+The model was trained with the default hyperparameters for 10 epochs, resulting in a total of 19 million parameters. Below are the key results and observations:
 
-![Loss Plot](loss_plot.png)
-
-### Example output from the Test Set:
-```
-   Average Test Loss: 0.8257
-
-   Original: Let's all remember to be nice.
-   Translated: Les bactéries vivent aux oignons de suspect.
-   Target: Souvenons-nous tous d'être gentils.
-
-   Original: Why would I be jealous?
-   Translated: Pourquoi les bactéries crient.
-   Target: Pourquoi serais-je jaloux ?
-
-   Original: I felt like I was dead.
-   Translated: Je me suis senti comme les pauvres s'appauvrissent.
-   Target: J'avais l'impression d'être mort.
-
-   Original: The ice has melted.
-   Translated: Les scarabées, vivent suspect.
-   Target: La glace a fondu.
-
-   Original: You've got to read this.
-   Translated: Tu as des femmes supplémentaires qui ne va pas suspect.
-   Target: Il faut que tu lises ça.
-```
-
+- **Average Test Loss**: 1.637
+- **Example Translations**:
+   - **Original**: Let's all remember to be nice.
+      - **Translated**: Les bactéries vivent aux oignons de suspect.
+      - **Target**: Souvenons-nous tous d'être gentils.
+   - **Original**: Why would I be jealous?
+      - **Translated**: Pourquoi les bactéries crient.
+      - **Target**: Pourquoi serais-je jaloux ?
+   - **Original**: I felt like I was dead.
+      - **Translated**: Je me suis senti comme les pauvres s'appauvrissent.
+      - **Target**: J'avais l'impression d'être mort.
+   - **Original**: The ice has melted.
+      - **Translated**: Les scarabées, vivent suspect.
+      - **Target**: La glace a fondu.
+   - **Original**: You've got to read this.
+      - **Translated**: Tu as des femmes supplémentaires qui ne va pas suspect.
+      - **Target**: Il faut que tu lises ça.
 
 ### Comments on Model Performance
 
 - The model was trained for only 10 epochs with a relatively small architecture due to computational limitations.
 - The goal was not to achieve state-of-the-art (SOTA) performance but to understand the Transformer model's workings.
 - Despite the limitations, the model has learned some aspects of translation, often getting the beginning of the sentence correct and sometimes the structure of the sentence.
-- We used a very basic tokenizere, implementing a BPE would definetely help.
+- We used a very basic tokenizer; implementing a BPE would definitely help.
 - There are still many errors, especially with longer and more complex sentences, indicating room for improvement with more training and a larger model.
+### Loss Plot during Training
+
+Below is the plot of the training and validation losses for 10 epoch for this model.
+
+![Loss Plot](loss_plot.png)
+
 
 ## Data Source
 This project uses data from the [Tatoeba Project](http://tatoeba.org) and [ManyThings.org](http://www.manythings.org/anki/).
 
 ### Attribution
-The dataset used to train the model copmes from the `fra-eng.zip` file.
+The dataset used to train the model comes from the `fra-eng.zip` file.
 
 This data is provided under the [Creative Commons Attribution 2.0 License](http://creativecommons.org/licenses/by/2.0).
 
