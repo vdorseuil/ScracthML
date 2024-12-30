@@ -566,7 +566,7 @@ class Transformer(nn.Module):
             probas = torch.softmax(x, dim=-1)
             
             probas[:, :, special_tokens_ids.unk_token_id] = 0 # Mask the probability of the <UNK> token
-            probas[:, :, special_tokens_ids.pad_token_id] = 0 # Mask the probability of the <UNK> token
+            probas[:, :, special_tokens_ids.pad_token_id] = 0 # Mask the probability of the <PAD> token
 
             max_proba, next_token = torch.max(probas[:, -1, :], dim=-1)  # greedy decoding : only max_proba
             generated_tokens.append(next_token.item())
