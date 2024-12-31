@@ -80,7 +80,7 @@ The [`generate.py`](generate.py) script will:
 ## Results
 ### Results for a 42M Parameter Model
 
-To test our scripts, we trained a model with the following hyperparameters for 50 epochs, resulting in a total of 42 million parameters.
+To test our scripts, we trained a model with the following hyperparameters for 50 epochs, resulting in a total of 42 million parameters. You can access the trained weights on **hugging-face** [here](https://huggingface.co/ValentinDorseuil/transformer_from_scratch_english_to_french_translation).
 - Model Parameters: d_model=256, d_ff=512, num_encoders=6, num_decoders=6
 num_heads=8, dv=32, dk=32, dropout=0.1
 - Training Parameters: batch_size=256, learning_rate=0.001, num_epochs=50
