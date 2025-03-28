@@ -69,14 +69,14 @@ pip install -r requirements.txt
 2. Follow the instructions in the folder-specific `README.md` or `notebook`.
 3. Run the scripts to see the implementation in action.
 
-## Contributing
+<!--## Contributing
 Contributions are welcome! If you want to add a new architecture or improve an existing one, please follow these steps:
 
 1. Fork the repository.
 2. Create a new branch: `git checkout -b feature/YourFeatureName`.
 3. Commit your changes: `git commit -m 'Add your feature'`.
 4. Push to the branch: `git push origin feature/YourFeatureName`.
-5. Submit a pull request.
+5. Submit a pull request.-->
 
 ## License
 This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
