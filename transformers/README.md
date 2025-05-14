@@ -125,11 +125,11 @@ Below are the key results and observations:
 - There are still errors, especially with longer and more complex sentences, indicating room for improvement with more training and a larger model.
 - By experimenting with `generate.py` using different types of sentences, we observed some limitations. Due to the basic implementation of the tokenizer, the model was sensitive to punctuation, spacing, and case. However, it performed well on simple sentences from the dataset.
 
-### Loss Plot during Training
+% ### Loss Plot during Training
 
-Below is the plot of the training and validation losses for 50 epochs for this model. We monitored the best checkpoint based on the validation loss to avoid overfitting. The best model obtained a val_loss of 1.5638 on epoch 17.
+% Below is the plot of the training and validation losses for 50 epochs for this model. We monitored the best checkpoint based on the validation loss to avoid overfitting. The best model obtained a val_loss of 1.5638 on epoch 17.
 
-![Loss Plot](loss_plot.png)
+% ![Loss Plot](loss_plot.png)
 
 ## Data Source
 
